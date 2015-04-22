@@ -19,7 +19,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 library(data.table)
-
+library(chron)
 if(!file.exists("data"))
   dir.create("data")
 
@@ -34,10 +34,15 @@ download.daily<-function(url="http://192.168.1.2") {
   data
 }
 
-download.5min<-function() {
-  download.file("http://192.168.1.2/log_5min.csv",destfile="data/log_5min.csv",mode="wb")
+download.5min<-function(url="http://192.168.1.2") {
+  download.file(file.path(url,"log_5min.csv"),destfile="data/log_5min.csv",mode="wb")
   data=as.data.table(read.csv("data/log_5min.csv",skip=3,header=FALSE,sep="\t", skipNul=TRUE,strip.white=TRUE))
-  data$Date<-as.Date(data$V1)
-  setnames(data,names(data),c("DT","Power"))
+  dtimes<-as.character(data$V1)
+  dtparts <- t(as.data.frame(strsplit(dtimes,' ')))
+  thetimes <- chron(dates=dtparts[,1],times=dtparts[,2],format=c('y-m-d','h:m:s'))
+  data$Time <- thetimes
+  data$V1=NULL
+  setcolorder(data, c("Time", "V2"))
+  setnames(data,names(data),c("Time","Power"))
   data
 }
