@@ -1,4 +1,4 @@
-# Download ASX historical data
+# Download data from solar panel
 #
 # Copyright (C) 2015 Simon Crase
 #
@@ -20,6 +20,7 @@
 
 library(data.table)
 library(chron)
+
 if(!file.exists("data"))
   dir.create("data")
 
