@@ -18,15 +18,22 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-library(data.table)
-library(chron)
+if (!require(data.table)) {
+  install.packages("data.table")
+  library(data.table)
+}
+
+if (!require(chron)) {
+  install.packages("chron")
+  library(chron)
+}
 
 if(!file.exists("data"))
   dir.create("data")
 
 
 download.daily<-function(url="http://192.168.1.2") {
-  download.file(file.path(url,"log_daily.csv"),destfile="data/log_daily.csv",mode="wb")
+#  download.file(file.path(url,"log_daily.csv"),destfile="data/log_daily.csv",mode="wb")
   data=as.data.table(read.csv("data/log_daily.csv",skip=3,header=FALSE,sep="\t", skipNul=TRUE,strip.white=TRUE))
   data$Date<-as.Date(data$V1)
   data$V1=NULL
@@ -36,7 +43,7 @@ download.daily<-function(url="http://192.168.1.2") {
 }
 
 download.5min<-function(url="http://192.168.1.2") {
-  download.file(file.path(url,"log_5min.csv"),destfile="data/log_5min.csv",mode="wb")
+#  download.file(file.path(url,"log_5min.csv"),destfile="data/log_5min.csv",mode="wb")
   data=as.data.table(read.csv("data/log_5min.csv",skip=3,header=FALSE,sep="\t", skipNul=TRUE,strip.white=TRUE))
   dtimes<-as.character(data$V1)
   dtparts <- t(as.data.frame(strsplit(dtimes,' ')))
@@ -47,3 +54,7 @@ download.5min<-function(url="http://192.168.1.2") {
   setnames(data,names(data),c("Time","Power"))
   data
 }
+
+daily<-download.daily()
+
+detail<-download.5min()
