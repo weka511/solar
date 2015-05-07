@@ -33,8 +33,19 @@ if (!require(chron)) {
 if(!file.exists("data"))
   dir.create("data")
 
+solar.url<-function(base="http://192.168.1."){
+  for (i in 1:127){
+    url.string<-paste(base,as.character(i),sep="")
+    con.url <- try(url(url.string, open='rb'),silent=TRUE)
+    try.error <- inherits(con.url, "try-error")
+    if (!try.error) {
+      try(close(con.url))
+      return(url.string)
+    }
+  }
+}
 
-download.daily<-function(url="http://192.168.1.2") {
+download.daily<-function(url) {
   download.file(file.path(url,"log_daily.csv"),destfile="data/log_daily.csv",mode="wb")
   data=as.data.table(read.csv("data/log_daily.csv",skip=3,header=FALSE,sep="\t", skipNul=TRUE,strip.white=TRUE))
   data$Date<-as.Date(data$V1)
@@ -44,7 +55,7 @@ download.daily<-function(url="http://192.168.1.2") {
   data
 }
 
-download.5min<-function(url="http://192.168.1.2") {
+download.5min<-function(url) {
   download.file(file.path(url,"log_5min.csv"),destfile="data/log_5min.csv",mode="wb")
   data=as.data.table(read.csv("data/log_5min.csv",skip=3,header=FALSE,sep="\t", skipNul=TRUE,strip.white=TRUE))
   dtimes<-as.character(data$V1)
@@ -57,7 +68,9 @@ download.5min<-function(url="http://192.168.1.2") {
   data
 }
 
-daily1<-download.daily()
+url<-solar.url()
+
+daily1<-download.daily(url)
 daily1$Date<-as.character(daily1$Date)
 tidy_file<-file.path("./data","tidied_daily_data.txt")
 
@@ -70,7 +83,7 @@ if (file.exists(tidy_file)) {
 
 
 
-detail1<-download.5min()
+detail1<-download.5min(url)
 detail1$Time<-as.character(detail1$Time)
 tidy_file<-file.path("./data","tidied_5min_data.txt")
 
