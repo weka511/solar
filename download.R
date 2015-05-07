@@ -18,6 +18,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+rm(list=ls())
+
 if (!require(data.table)) {
   install.packages("data.table")
   library(data.table)
@@ -33,7 +35,7 @@ if(!file.exists("data"))
 
 
 download.daily<-function(url="http://192.168.1.2") {
-#  download.file(file.path(url,"log_daily.csv"),destfile="data/log_daily.csv",mode="wb")
+  download.file(file.path(url,"log_daily.csv"),destfile="data/log_daily.csv",mode="wb")
   data=as.data.table(read.csv("data/log_daily.csv",skip=3,header=FALSE,sep="\t", skipNul=TRUE,strip.white=TRUE))
   data$Date<-as.Date(data$V1)
   data$V1=NULL
@@ -43,7 +45,7 @@ download.daily<-function(url="http://192.168.1.2") {
 }
 
 download.5min<-function(url="http://192.168.1.2") {
-#  download.file(file.path(url,"log_5min.csv"),destfile="data/log_5min.csv",mode="wb")
+  download.file(file.path(url,"log_5min.csv"),destfile="data/log_5min.csv",mode="wb")
   data=as.data.table(read.csv("data/log_5min.csv",skip=3,header=FALSE,sep="\t", skipNul=TRUE,strip.white=TRUE))
   dtimes<-as.character(data$V1)
   dtparts <- t(as.data.frame(strsplit(dtimes,' ')))
@@ -55,6 +57,26 @@ download.5min<-function(url="http://192.168.1.2") {
   data
 }
 
-daily<-download.daily()
+daily1<-download.daily()
+daily1$Date<-as.character(daily1$Date)
+tidy_file<-file.path("./data","tidied_daily_data.txt")
 
-detail<-download.5min()
+if (file.exists(tidy_file)) {
+  daily2=data.table(read.table(tidy_file,header=TRUE))
+  daily2$Date<-as.character(daily2$Date)
+  write.table(unique(rbind(daily1,daily2)),tidy_file,row.names=FALSE)
+} else
+  write.table(daily1,tidy_file,row.names=FALSE)
+
+
+
+detail1<-download.5min()
+detail1$Time<-as.character(detail1$Time)
+tidy_file<-file.path("./data","tidied_5min_data.txt")
+
+if (file.exists(tidy_file)) {
+  detail2<-data.table(read.table(tidy_file,header=TRUE))
+  write.table(unique(rbind(detail1,detail2)),tidy_file,quote=TRUE,row.names=FALSE)
+} else 
+  write.table(detail1,tidy_file,quote=TRUE,row.names=FALSE)
+
