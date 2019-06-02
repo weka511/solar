@@ -1,6 +1,6 @@
 # Download data from solar panel
 #
-# Copyright (C) 2015 Simon Crase
+# Copyright (C) 2015-2019 Simon Crase
 #
 # simon@greenweaves.nz
 # 
@@ -33,11 +33,18 @@ if (!require(chron)) {
 if(!file.exists("data"))
   dir.create("data")
 
-solar.url<-function(base="http://192.168.1."){
+# solar.url
+#
+# Establish URL to be used for downloading data
+solar.url<-function(base="http://192.168.1.",
+                    file.name.to.probe='log_5min.csv'){
   for (i in 1:127){
-    url.string<-paste(base,as.character(i),sep="")
-    con.url <- try(url(url.string, open='rb'),silent=TRUE)
-    try.error <- inherits(con.url, "try-error")
+    url.string <- paste(base,as.character(i),sep="")
+    con.url    <- suppressWarnings(
+      try(
+        url(file.path(url.string,file.name.to.probe),open='rb'),
+          silent=TRUE))
+    try.error  <- inherits(con.url, "try-error")
     if (!try.error) {
       try(close(con.url))
       return(url.string)
@@ -47,9 +54,9 @@ solar.url<-function(base="http://192.168.1."){
 
 download.daily<-function(url) {
   download.file(file.path(url,"log_daily.csv"),destfile="data/log_daily.csv",mode="wb")
-  data=as.data.table(read.csv("data/log_daily.csv",skip=3,header=FALSE,sep="\t", skipNul=TRUE,strip.white=TRUE))
-  data$Date<-as.Date(data$V1)
-  data$V1=NULL
+  data      <- as.data.table(read.csv("data/log_daily.csv",skip=3,header=FALSE,sep="\t", skipNul=TRUE,strip.white=TRUE))
+  data$Date <- as.Date(data$V1)
+  data$V1   <- NULL
   setcolorder(data, c("Date", "V2", "V3"))
   setnames(data,names(data),c("Date","Power","Duration"))
   data
@@ -57,38 +64,37 @@ download.daily<-function(url) {
 
 download.5min<-function(url) {
   download.file(file.path(url,"log_5min.csv"),destfile="data/log_5min.csv",mode="wb")
-  data=as.data.table(read.csv("data/log_5min.csv",skip=3,header=FALSE,sep="\t", skipNul=TRUE,strip.white=TRUE))
-  dtimes<-as.character(data$V1)
-  dtparts <- t(as.data.frame(strsplit(dtimes,' ')))
-  thetimes <- chron(dates=dtparts[,1],times=dtparts[,2],format=c('y-m-d','h:m:s'))
+  data      <- as.data.table(read.csv("data/log_5min.csv",skip=3,header=FALSE,sep="\t", skipNul=TRUE,strip.white=TRUE))
+  dtimes    <- as.character(data$V1)
+  dtparts   <- t(as.data.frame(strsplit(dtimes,' ')))
+  thetimes  <- chron(dates=dtparts[,1],times=dtparts[,2],format=c('y-m-d','h:m:s'))
   data$Time <- thetimes
-  data$V1=NULL
+  data$V1   <- NULL
   setcolorder(data, c("Time", "V2"))
   setnames(data,names(data),c("Time","Power"))
   data
 }
 
-url<-solar.url()
-
-daily1<-download.daily(url)
-daily1$Date<-as.character(daily1$Date)
-tidy_file<-file.path("./data","tidied_daily_data.txt")
+url         <- solar.url()
+daily1      <- download.daily(url)
+daily1$Date <- as.character(daily1$Date)
+tidy_file   <- file.path("./data","tidied_daily_data.txt")
 
 if (file.exists(tidy_file)) {
-  daily2=data.table(read.table(tidy_file,header=TRUE))
-  daily2$Date<-as.character(daily2$Date)
+  daily2      <- data.table(read.table(tidy_file,header=TRUE))
+  daily2$Date <- as.character(daily2$Date)
   write.table(unique(rbind(daily1,daily2)),tidy_file,row.names=FALSE)
 } else
   write.table(daily1,tidy_file,row.names=FALSE)
 
 
 
-detail1<-download.5min(url)
-detail1$Time<-as.character(detail1$Time)
-tidy_file<-file.path("./data","tidied_5min_data.txt")
+detail1      <- download.5min(url)
+detail1$Time <- as.character(detail1$Time)
+tidy_file    <- file.path("./data","tidied_5min_data.txt")
 
 if (file.exists(tidy_file)) {
-  detail2<-data.table(read.table(tidy_file,header=TRUE))
+  detail2 <- data.table(read.table(tidy_file,header=TRUE))
   write.table(unique(rbind(detail1,detail2)),tidy_file,quote=TRUE,row.names=FALSE)
 } else 
   write.table(detail1,tidy_file,quote=TRUE,row.names=FALSE)
